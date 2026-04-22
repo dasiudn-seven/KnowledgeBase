@@ -273,6 +273,16 @@ SELECT 字段列表 FROM 表名 WHERE 条件列表;
 
 ##### 聚合函数 （ COUNT, MAX, MIN, AVG, SUM, ...）
 
+**将一列数据作为一个整体，进行纵向计算**
+
+```sql
+-- Count 
+```
+
+
+
+
+
 ##### 分组查询（ GROUP BY）
 
 ##### 排序查询（ ORDER BY ）
