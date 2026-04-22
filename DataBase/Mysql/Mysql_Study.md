@@ -276,15 +276,61 @@ SELECT 字段列表 FROM 表名 WHERE 条件列表;
 **将一列数据作为一个整体，进行纵向计算**
 
 ```sql
--- Count 
+SELECT 聚合函数(字段列表) FROM 表名;
+
+-- COUNT 统计数量，null值是不参与计算的
+SELECT COUNT(字段列表) FROM 表名;
+
+-- MAX 最大值
+SELECT MAX(字段列表) FROM 表名;
+
+-- MIN 最小值
+SELECT MIN(字段列表) FROM 表名;
+
+-- AVG 求平均值
+SELECT AVG(字段列表) FROM 表名;
+
+-- SUM 求和
+SELECT SUM(字段列表) FROM 表名;
 ```
-
-
-
-
 
 ##### 分组查询（ GROUP BY）
 
+```sql
+SELECT 字段列表 FROM 表名 [WHERE 条件] GROUP BY 分组字段名 [HAVING 分组后的过滤条件];
+
+-- eg: 查询年龄(age)小于45的员工，并根据工作地址(work_address)进行分组，获取员工数量大于等于3的工作地址;
+SELECT work_address, COUNT(*) address_count FROM WHERE age < 45 GROUP BY work_address HAVING address_count >= 3;
+```
+
+###### WHERE 和 HAVING 之间的区别
+
+1. **执行时机不同：** `WHERE` 是分组之前进行的过滤，不满足`WHERE`条件不进行分组，`HAVING`是分组之后对结果进行的过滤。
+2. **判断条件不同:** `WHERE`不能对聚合函数进行判断，而`HAVING`可以。
+
+###### 优先级：WHERE > GROUP BY > HAVING
+
 ##### 排序查询（ ORDER BY ）
 
+```sql
+SELECT 字段列表 FROM 表名 ORDER BY 字段1 条件1, 字段2 条件2, ... , 字段n 条件n;
+```
+
+###### 排序方式
+
+1. 升序 ASC
+2. 降序 DESC
+
+###### **注意：多段排序，只有第一段排序相同时，才会进行第二段排序。**
+
 ##### 分页查询（ LIMIT ）
+
+```sql
+SELECT 字段列表 FROM 表名 LIMIT 起始索引 查询
+```
+
+###### 注意
+
+1. 起始索引从0开始，起始索引 = ( 查询页码 - 1 )  * 每页显示记录数。
+2. 分页查询时数据库的方言，不同数据库，有不同的实现，`Mysql` 是 `LIMIT`。
+3. 如果查询时第一页数据，起始索引可以省略，直接简写为 ` LIMIT 10`。
