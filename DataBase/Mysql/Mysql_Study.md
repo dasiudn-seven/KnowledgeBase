@@ -1,8 +1,8 @@
 # Mysql Study
 
-## SQL
+### SQL
 
-### SQL分类
+#### SQL分类
 
 | 分类  |             全称             |             说明              |
 |:---:|:--------------------------:|:---------------------------:|
@@ -11,11 +11,11 @@
 | DQL |    Data Query Language     |     数据查询语言，用来查询数据库中表的记录     |
 | DCL |   Data Control Language    | 数据控制语言，用来创建数据库用户，控制数据库的访问权限 |
 
-### DDL语句
+#### DDL语句
 
-#### DDL 数据库操作
+##### DDL 数据库操作
 
-##### 查询
+###### 查询
 
 ```sql
 -- 查询所有数据库
@@ -24,29 +24,29 @@ SELECT DATABASES;
 SELECT DATABASE();
 ```
 
-##### 创建
+###### 创建
 
 ```sql
 -- 创建数据库
 CREATE DATABASE [IF NOT EXISTS] 数据库名 [DEFAULT CHARSET 字符集(utf8/utf8mb4)] [COLLATE 排序规则];
 ```
 
-##### 删除
+###### 删除
 
 ```sql
 -- 删除数据库
 DROP DATABASE [IF EXISTS] 数据库名;
 ```
 
-##### 使用
+###### 使用
 
 ```sql
 USE 数据库名;
 ```
 
-#### DDL 表操作
+##### DDL 表操作
 
-##### 查询
+###### 查询
 
 ```sql
 -- 查询当前数据库中所有表
@@ -59,7 +59,7 @@ DESC 表名;
 SHOW CREATE TABLE 表名;
 ```
 
-##### 创建
+###### 创建
 
 ```sql
 -- 创建一个表
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS person(
 )COMMENT 用户表;
 ```
 
-##### 修改
+###### 修改
 
 ```sql
 -- 添加字段
@@ -99,7 +99,7 @@ ALTER TABLE 表名 DROP 字段名;
 ALTER TABLE 表名 RENAME TO 新表名;
 ```
 
-##### 删除
+###### 删除
 
 ```sql
 -- 删除表
@@ -109,7 +109,7 @@ DROP TABLE IF EXISTS 表名;
 TRUNCATE TABLE 表名;
 ```
 
-##### 数据类型
+###### 数据类型
 
 1. 数值类型
 
@@ -156,9 +156,9 @@ TRUNCATE TABLE 表名;
    * **datetime**：日期 + 时间 `YYYY-MM-DD HH:MM:SS`（常用）
    * **timestamp**：时间戳，自动时区转换，会随更新自动刷新 → 常用作 `create_time`、`update_time`
 
-### DML语句
+#### DML语句
 
-#### 添加数据（INSERT）
+##### 添加数据（INSERT）
 
 ```sql
 -- 给指定字段添加数据
@@ -172,7 +172,7 @@ INSERT INTO 表名(字段名1, 字段名2, ... , 字段名n) VALUES （值1, 值
 INSERT INTO 表名 VALUES （值1, 值2, ... , 值n）,（值1, 值2, ... , 值n）,（值1, 值2, ... , 值n）, ... , （值1, 值2, ... , 值n）;
 ```
 
-#### 修改数据（UPDATE）
+##### 修改数据（UPDATE）
 
 ```sql
 UPDATE 表名 SET 字段1=值1, 字段2=值2, ... [WHERE 条件];
@@ -180,7 +180,7 @@ UPDATE 表名 SET 字段1=值1, 字段2=值2, ... [WHERE 条件];
 
 ***注意：如果没有条件则会修改表中的所有数据。***
 
-#### 删除数据（DELETE）
+##### 删除数据（DELETE）
 
 ```sql
 DELETE FROM 表名 [WHERE 条件]
@@ -188,7 +188,7 @@ DELETE FROM 表名 [WHERE 条件]
 
 ***注意：如果没有条件则会修改表中的所有数据。***
 
-### DQL语句
+#### DQL语句
 
 查询关键字: ***SELECT***
 
@@ -202,9 +202,9 @@ ORDER BY 排序字段列表
 LIMIT 分页参数
 ```
 
-#### DQL 类别
+##### DQL 类别
 
-##### 基本查询
+###### 基本查询
 
 ```sql
 -- 查询多个字段
@@ -220,13 +220,13 @@ SELECT 字段1 [AS 别名1] , 字段2 [AS 别名2], ... , 字段n [AS 别名n] F
 SELECT DISTINCT 字段列表 FROM 表名;
 ```
 
-##### 条件查询（ WHERE ）
+###### 条件查询（ WHERE ）
 
 ```sql
 SELECT 字段列表 FROM 表名 WHERE 条件列表;
 ```
 
-###### 条件分类
+**条件分类**
 
 1. 比较条件
 
@@ -271,7 +271,7 @@ SELECT 字段列表 FROM 表名 WHERE 条件列表;
    * `EXISTS(子查询)` 子查询有结果则为真
    * `NOT EXISTS` 子查询无结果则为真
 
-##### 聚合函数 （ COUNT, MAX, MIN, AVG, SUM, ...）
+###### 聚合函数 （ COUNT, MAX, MIN, AVG, SUM, ...）
 
 **将一列数据作为一个整体，进行纵向计算**
 
@@ -294,7 +294,7 @@ SELECT AVG(字段列表) FROM 表名;
 SELECT SUM(字段列表) FROM 表名;
 ```
 
-##### 分组查询（ GROUP BY）
+###### 分组查询（ GROUP BY）
 
 ```sql
 SELECT 字段列表 FROM 表名 [WHERE 条件] GROUP BY 分组字段名 [HAVING 分组后的过滤条件];
@@ -303,76 +303,76 @@ SELECT 字段列表 FROM 表名 [WHERE 条件] GROUP BY 分组字段名 [HAVING 
 SELECT work_address, COUNT(*) address_count FROM WHERE age < 45 GROUP BY work_address HAVING address_count >= 3;
 ```
 
-###### WHERE 和 HAVING 之间的区别
+**WHERE 和 HAVING 之间的区别**
 
 1. **执行时机不同：** `WHERE` 是分组之前进行的过滤，不满足`WHERE`条件不进行分组，`HAVING`是分组之后对结果进行的过滤。
 2. **判断条件不同:** `WHERE`不能对聚合函数进行判断，而`HAVING`可以。
 
-###### 优先级：WHERE > GROUP BY > HAVING
+**优先级：WHERE > GROUP BY > HAVING**
 
-##### 排序查询（ ORDER BY ）
+###### 排序查询（ ORDER BY ）
 
 ```sql
 SELECT 字段列表 FROM 表名 ORDER BY 字段1 条件1, 字段2 条件2, ... , 字段n 条件n;
 ```
 
-###### 排序方式
+**排序方式**
 
 1. 升序 ASC
 2. 降序 DESC
 
-###### **注意：多段排序，只有第一段排序相同时，才会进行第二段排序。**
+**注意：多段排序，只有第一段排序相同时，才会进行第二段排序。**
 
-##### 分页查询（ LIMIT ）
+###### 分页查询（ LIMIT ）
 
 ```sql
 SELECT 字段列表 FROM 表名 LIMIT 起始索引 查询
 ```
 
-###### 注意
+**注意**
 
 1. 起始索引从0开始，起始索引 = ( 查询页码 - 1 )  * 每页显示记录数。
 2. 分页查询时数据库的方言，不同数据库，有不同的实现，`Mysql` 是 `LIMIT`。
 3. 如果查询时第一页数据，起始索引可以省略，直接简写为 ` LIMIT 10`。
 
-#### DQL 执行顺序
+##### DQL 执行顺序
 
 ![Photo20260422_155734](./asserts/Photo20260422_155734.png)
 
-### DCL语句
+#### DCL语句
 
 **DCL英文全称是Data Control Language(数据控制语言)，用来管理数据库用户、控制数据库的访问权限**
 
-#### DCL管理用户
+##### DCL管理用户
 
-##### 查询用户
+###### 查询用户
 
 ```sql
 USE MYSQL;
 SELECT * FROM USER;
 ```
 
-##### 创建用户
+###### 创建用户
 
 ```sql
 CREATE USER '用户名'@'主机名' IDENTIFIED BY '密码';
 ```
 
-##### 修改用户密码
+###### 修改用户密码
 
 ```sql
 ALTER USER '用户名'@'主机名' IDENTIFIED WITH MYSQL_NATIVE_PASSWORD BY '新密码';
 ```
 
-##### 删除用户
+###### 删除用户
 
 ```sql
 DROP USER '用户名'@'主机名';
 ```
 
-#### DCL控制权限
+##### DCL控制权限
 
-##### 控制权限类别
+###### 控制权限类别
 
 **权限描述及定义，查看[官方文档](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html)**
 
@@ -380,25 +380,25 @@ DROP USER '用户名'@'主机名';
 
 ![Photo20260422_162557](./asserts/Photo20260422_162557.png)
 
-##### 查询权限
+###### 查询权限
 
 ```sql
 SHOW GRANTS FOR '用户名'@'主机名';
 ```
 
-##### 授予权限
+###### 授予权限
 
 ```sql
 GRANT 权限列表 ON 数据库.表名 TO '用户名'@'主机名';
 ```
 
-##### 撤销权限
+###### 撤销权限
 
 ```sql
 REVOKE 权限列表 ON 数据库.表名 FROM '用户名'@'主机名';
 ```
 
-##### 注意
+###### 注意
 
 1. 多个权限之间，使用英文逗号分隔
 2. 授权时，数据库名 和 表名 可以使用 * 进行通配，代表所有。
@@ -464,3 +464,65 @@ SELECT 函数;
 |                    IFNULL(value1,value2)                     |         如果value1不为空，返回value1，否则返回value2         |
 |    CASE WHEN [val1] THEN [res1] .... ELSE [ default ] END    |   如果val1为true，返回res1，... ，否则返回default默认值值    |
 | CASE [expr] WHEN  [val1] THEN [res1] .... ELSE [ default ] END | 如果expr的值等于val1，返回res1，... ，否则返回default默认值值 |
+
+### 约束
+
+#### **概念**
+
+**约束是作用于表中的字段上的规则，用于限制存储在表中的数据。概念：约束是作用于表中的字段上的规则，用于限制存储在表中的数据。**
+
+#### **目的**
+
+**保证数据库中数据的正确，有效性和完整性。**
+
+#### 分类
+
+|   约束   |                           描述                           |   关键字    |
+| :------: | :------------------------------------------------------: | :---------: |
+| 非空约束 |                   限制该字段不能为NULL                   |  NOT NULL   |
+| 唯一约束 |         保证该字段的所有字段都是唯一的，不重复的         |   UNIQUE    |
+| 主键约束 |         主键是一行数据的唯一标识，要求非空且唯一         | PRIMARY KEY |
+| 默认约束 |      保存数据时，如果未指定该字段的值，则采用默认值      |   DEFAULT   |
+| 检查约束 |                 保证字段值满足某一个条件                 |    CHECK    |
+| 外键约束 | 用来让两张表的数据之间建立连接，保证数据的唯一性和完整性 | FOREIGN KEY |
+
+#### 外键约束
+
+**外键用来让两张表的数据之间建立连接，从而保证数据的一致性和完整性。**
+
+##### 约束
+
+```sql
+-- 添加外键
+ALTER TABLE 表名 ADD CONSTRAINT 外键名称 FOREIGN KEY (外键字段名) REFERENCES 主表(主表列名);
+
+-- eg:主表 部门表 dept.id, 从表 user.dept_id
+ALTER TABLE user ADD CONSTRAINT fk_emp_dept_id FOREIGN KEY (dept_id) REFERENCES dept(id);
+
+-- 删除外键
+ALTER TABLE 表名 DROP FOREIGN KEY 外键名称;
+
+-- eg: 删除 user 表中的 fk_emp_dept_id 外键
+ALTER TABLE user DROP FOREIGN KEY fk_emp_dept_id;
+```
+
+##### 删除/更新行为
+
+|    行为     |                             说明                             |
+| :---------: | :----------------------------------------------------------: |
+|  NO ACTION  | 当父表中删除/更新对应记录时，首先检查该记录是否有对应外键，如果有则不允许删除/更新（与RETRICT一致） |
+|   RETRICT   | 当父表中删除/更新对应记录时，首先检查该记录是否有对应外键，如果有则不允许删除/更新（与NOT ACTION一致） |
+|   CASCADE   | 当父表中删除/更新对应记录时，首先检查该记录是否有对应外键，如果有，则也删除/更新外键在子表的记录。 |
+|  SET NULL   | 当在父表中删除对应记录时，首先检查该记录是否有对应外键，如果有则设置子表中该外键值为null。（这就要求该外键允许取null）。 |
+| SET DEFAULT | 父表有变更时，子表将外键列设置成一个默认的值(Innodb不支持)。 |
+
+```sql
+-- 添加行为
+ALTER TABLE 表名 ADD CONSTRAINT 外键名称 FOREIGN KEY (外键字段名) REFERENCES 主表(主表列名) ON UPDATE CASCADE ON DELETE CASCADE;
+
+-- -- eg:主表 部门表 dept.id, 从表 user.dept_id 并添加 CASCADE 行为
+ALTER TABLE user ADD CONSTRAINT fk_emp_dept_id FOREIGN KEY (dept_id) REFERENCES dept(id) ON UPDATE CASCADE ON DELETE CASCADE;
+```
+
+### 多表查询
+
