@@ -526,3 +526,166 @@ ALTER TABLE user ADD CONSTRAINT fk_emp_dept_id FOREIGN KEY (dept_id) REFERENCES 
 
 ### 多表查询
 
+#### 多表关系
+
+##### 一对多/多对一
+
+* **案列：**部门 与 员工的关系。
+* **关系：**一个部门对应多个员工，一个员工对应一个部门。
+* **实现：**在多的一方创建外键，指向一的一方的主键。
+
+##### 多对多
+
+* **案列：**学生 与 课程的关系。
+* **关系：**一名学生可以选择多门课程，一门课程可以有多名学生。
+* **实现：**建立第三张表，中间表至少包含两个外键，分别关联两方主键。
+
+##### 一对一
+
+* **案列：**用户 与 用户详情的关系。
+* **关系：**一对一关系，多用于单表拆分，将一张表的基础字段放在一张表中，其他详情字段放在另一张表中，以提示操作效率。
+* **实现：** 在任意一方加上外键，关联另一方主键，并设置外键唯一的约束(UNIQUE)。
+
+#### 多表查询概述
+
+* **概述：**指从多张表中查询数据。
+* **笛卡尔集：**笛卡尔乘集是指在数学中，两个集合 A集合 和 B集合的所有组合情况。（在多表查询的时候，需要消除无效的笛卡尔集。）
+
+```sql
+-- eg: 一对一/一对多， 部门dept.id，人员user.dept_id
+SELECT * FROM user, dept WHERE dept.id = user.dept_id;
+
+-- eg: 多对多，课程course.id, 学生student.id，学生课程关系表student_course(id, student_id, course_id)
+SELECT * FROM course, student, student_course WHERE student_course.student_id = student.id && student_course.course_id = course.id;
+```
+
+#### 多表查询的分类
+
+##### 内连接
+
+**相当于查询A、B交集的部分数据**
+
+* 隐式内连接
+
+  ```sql
+  SELECT 字段列表 FROM 表1，表2 WHERE 条件;
+  
+  -- 查询每一个员工姓名，及关联的部门的名称
+  SELECT user.name, dept.name FROM user, dept WHERE user.dept_id = dept.id;
+  ```
+
+* 显式内连接：
+
+  ```sql
+  SELECT 字段列表 FROM 表1 [INNER] JOIN 表2 ON 连接条件 ...;
+  
+  -- 查询每一个员工姓名，及关联的部门的名称
+  SELECT user.name, dept.name FROM user [INNER] JOIN dept ON user.dept_id = dept.id;
+  ```
+
+##### 外连接
+
+* **左外连接：**查询左表所有数据，以及两张表交集的部分数据。
+
+  ```sql
+  SELECT 字段列表 FROM 表1 LEFT [OUTER] JOIN 表2 ON 连接条件 ...;
+  
+  -- 查询员工表中的所有数据，和对应的部门的信息;
+  SELECT user.*, dept.name FROM user LEFT [OUTER] JOIN dept ON user.dept_id = dept.id;
+  ```
+
+* **右外连接：**查询右表所有数据，以及两张表交集的部分数据。
+
+  ```sql
+  SELECT 字段列表 FROM 表1 RIGHT [OUTER] JOIN 表2 ON 连接条件 ...;
+  
+  -- 查询部门表中的所有数据，和员工的信息;
+  SELECT user.*, dept.* FROM user RIGHT [OUTER] JOIN dept ON user.dept_id = dept.id;
+  ```
+
+##### 自连接
+
+**当前表与自身的连接查询，自连接必须使用表别名。**
+
+```sql
+-- 自连接查询，可以是内连接查询，也可以是外连接查询。
+SELECT 字段列表 FROM 表A 别名A JOIN 表A 别名B ON 连接条件 ...;
+
+-- 查询员工及其领导的名字 emp.id, emp.name, emp.managerid
+SELECT emp1.name, emp2.name FROM emp emp1 JOIN emp emp2 ON emp1.managerid == emp2.id;
+
+-- 查询员工及其领导的名字 emp.id, emp.name, emp.managerid，如果员工没有领导，也要查询出来。
+SELECT emp1.name '员工', emp2.name 上级 FROM emp1 LEFT JOIN emp emp2 ON emp1.managerid == emp2.id;
+```
+
+#### 联合查询
+
+**对于UNION查询，就是把多次查询的结果合并起来，形成一个新的查询结果集。**
+
+```sql
+SELECT 字段列表 FROM 表A ...
+UNION [ALL]
+SELECT 字段列表 FROM 表B ...;
+
+-- 薪资低于5千，年龄大于50, emp.salary 和 emp.age;
+SELECT * FROM emp WHERE emp.salary < 5000
+UNION ALL
+SELECT * FROM emp WHERE emp.age > 50;
+
+-- 去重查询：薪资低于5千，年龄大于50, emp.salary 和 emp.age;
+SELECT * FROM emp WHERE emp.salary < 5000
+UNION
+SELECT * FROM emp WHERE emp.age > 50;
+```
+
+**注意**
+
+1. 对于联合查询的多张表的列数必须保持一致，字段类型也需要保持一致。
+2. `UNION ALL` 会将全部的数据直接合并在一起，`UNION` 会对合并之后的数据去重。 
+
+#### 子查询
+
+**概念：SQL语句中嵌套SELECT语句，称为嵌套查询，又称子查询。**
+
+```sql
+SELECT 字段列表 FROM 表1 WHERE 字段 = (SELECT 字段 FROM 表2 );
+```
+
+***子查询外部的语句可以是INSERT/UPDATE/DELETE/SELECT的任何一个。***
+
+##### 子查询结果分类
+
+###### 标量子查询 (子查询结果为单个值)
+
+**子查询返回的结果是单个值（数字，字符串，日期等），最简单的形式，这种子查询称为标量子查询。**
+
+**常用的操作符：**=、<>、>、 >=、 <、 <=
+
+```sql
+-- 查询“销售部”的所有员工信息
+SELECT * FROM emp WHERE emp.deptid = (SELECT id FROM dept WHERE name = '销售部');
+
+-- 查询在“东方白”入职之后的员工信息
+SELECT * FROM emp WHERE entrydate > (SELECT entrydate FROM emp WHERE name = '东方白');
+```
+
+###### 列子查询（子查询结果为一列）
+
+**子查询返回的结果是一列（可以是多列），这种子查询称为列子查询。**
+
+**常用的操作符：**`IN`,  `NOT IN`, `ANY`, `SOME`, `ALL`
+
+ 
+
+###### 行子查询（子查询结果为一行）
+
+###### 表子查询（子查询结果为多行多列）
+
+##### 子查询位置分类
+
+###### WHERE之后
+
+###### FROM之后
+
+###### SELECT之后
+
