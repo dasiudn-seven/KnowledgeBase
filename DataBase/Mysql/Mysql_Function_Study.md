@@ -1,4 +1,4 @@
-# Mysql Study
+# Mysql Function Study
 
 ### SQL
 
@@ -671,21 +671,147 @@ SELECT * FROM emp WHERE entrydate > (SELECT entrydate FROM emp WHERE name = '东
 
 ###### 列子查询（子查询结果为一列）
 
-**子查询返回的结果是一列（可以是多列），这种子查询称为列子查询。**
+**子查询返回的结 果是一列（可以是多列），这种子查询称为列子查询。**
 
 **常用的操作符：**`IN`,  `NOT IN`, `ANY`, `SOME`, `ALL`
 
- 
+| 操作符 |                  描述                  |
+| :----: | :------------------------------------: |
+|   IN   |      在指定的集合范围之内，多选一      |
+| NOT IN |         不在制定的集合范围之内         |
+|  ANY   |  子查询返回列表中，有任意一个满足即可  |
+|  SOME  | 与ANY等同，使用SOME的地方都可以使用ANY |
+|  ALL   |    子查询返回列表的所有值都必须满足    |
+
+```sql
+-- 列子查询
+-- 查询 销售部 和 市场部 的所有员工信息
+SELECT * FROM emp WHERE dept_id IN (SELECT id FROM dept WHERE name IN ('销售部', '市场部'));
+
+-- 查询比财务部所有人工资都高的员工信息
+SELECT * FROM emp WHERE salary > ALL (SELECT salray FROM emp WHERE dept_id = (SELECT id FROM dept WHERE name = '财务部'));
+
+-- 查询比研发部其中任意一人工资高的员工信息
+SELECT * FROM emp WHERE salary > ANY (SELECT salray FROM emp WHERE dept_id = (SELECT id FROM dept WHERE name = '研发部'));
+```
 
 ###### 行子查询（子查询结果为一行）
 
+**子查询返回的结果是一行（可以是多行），这种子查询称为列子查询。**
+
+**常用的操作符:** `=`, `<>`, `IN`, `NOT IN`
+
+```sql
+-- 行子查询
+-- 查询与 “张无忌” 的薪资及直属领导相同的员工信息；
+SELECT * FROM emp WHERE (salary, superior) = (SELECT salary, superior FROM emp WHERE name = '张无忌');
+```
+
 ###### 表子查询（子查询结果为多行多列）
+
+**子查询返回结果是多行多列，这种子查询称为*表子查询***
+
+**常用的操作符:** `IN`
+
+```sql
+-- 表子查询
+-- 查询与 "鹿杖客", "宋远桥" 的职位和薪资相同的员工信息
+SELECT * FROM emp WHERE (position, salary) in (SELECT position, salary FROM emp WHERE name = '宋远桥' OR name = '鹿杖客');
+
+-- 查询入职日期是 "2006-01-01" 之后的员工信息，及其部门信息
+SELECT e.*, d.* FROM (SELECT * FROM emp WHERE entrydate > '2006-01-01') e LEFT JOIN dept d on e.dept_id = d.id;
+```
 
 ##### 子查询位置分类
 
 ###### WHERE之后
 
+```sql
+-- 查询与 "鹿杖客", "宋远桥" 的职位和薪资相同的员工信息
+SELECT * FROM emp WHERE (position, salary) in (SELECT position, salary FROM emp WHERE name = '宋远桥' OR name = '鹿杖客');
+```
+
 ###### FROM之后
+
+```sql
+-- 查询入职日期是 "2006-01-01" 之后的员工信息，及其部门信息
+SELECT e.*, d.* FROM (SELECT * FROM emp WHERE entrydate > '2006-01-01') e LEFT JOIN dept d on e.dept_id = d.id;
+```
 
 ###### SELECT之后
 
+```sql
+-- 查询低于本部门平均薪资的员工信息 和 部门的平均薪资
+SELECT *, (SELECT AVG(salary) FROM emp e1 WHERE e1.dept_id = e2.dept_id) FROM emp e2 WHERE salary < (SELECT AVG(salary) FROM emp e1 WHERE e1.dept_id = e2.dept_id);
+```
+
+## 事务
+
+### 事务简介
+
+***事务* 是一组操作的集合，它是一个不可分割的工作单位，事务会把所有的操作作为一个整体一起向系统提交或撤销操作请求，即这些操作*要么同时成功，要么同时失败*。**
+
+默认MySQL的事务是自动提交的，也就是说，当执行一条DML语句，MySQL会立刻隐式的提交事务。
+
+### 事务操作
+
+#### 查看/设置事务提交方式
+
+```sql
+SELECT @@AUTOCOMMIT;
+SET @@AUTOCOMMIT = 0;
+```
+
+#### 开启事务
+
+```sql
+-- 开始事务的两种方式
+START TRANSACTION;
+BEGIN;
+```
+
+#### 提交事务
+
+```sql
+COMMIT;
+```
+
+#### 回滚事务
+
+```sql
+ROLLBACK;
+```
+
+### 事务四大特性  
+
+* **原子性（Atomicity）**：事务是不可分割的最小操作单元，要么全部成功，要么全部失败。
+* **一致性（Consistency）**：事务提交完成时，必须使所有的数据都保持一致状态。
+* **隔离性（Isolation）**：数据库系统提供的隔离机制，保证事务在不受外部并发操作影响的独立环境下运行。
+* **持久性（Durability）**：事务一旦提交或回滚，它对数据库中的数据的改变就是永久的。
+
+### 并发事务问题
+
+|    问题    |                             描述                             |
+| :--------: | :----------------------------------------------------------: |
+|    脏读    |           一个事务读到另一个事务还没有提交的数据。           |
+| 不可重复读 | 一个事务先后读取同一条记录，但两次读取的数据不同，称之为不可重复读。 |
+|    幻读    | 一个事务按照条件查询数据时，没有对应的数据行，但是在插入数据时，又发现这行数据已经存在了，好像出现了“幻影” |
+
+### 事务隔离级别
+
+| 隔离级别(Y-出现,N-不出现) | 描述 | 不可重复读 | 幻读 |
+| :-----------------------: | :--: | :--------: | :--: |
+|     Read uncommitted      |  Y   |     Y      |  Y   |
+|      Read committed       |  N   |     Y      |  Y   |
+|   Repeatable Read(默认)   |  N   |     N      |  Y   |
+|       Serializable        |  N   |     N      |  N   |
+
+```sql
+-- 查看事务的隔离级别
+SELECT @@TRANSACTION_ISOLATION;
+
+-- 设置事务隔离级别 SESSION - 会话, GLOBAL - 全 局
+SET [SESSION | GLOBAL] TRANSACTION ISOLATION LEVEL { READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE};
+```
+
+***注意: 事务隔离级别越高，数据越安全，但是性能越低。***
