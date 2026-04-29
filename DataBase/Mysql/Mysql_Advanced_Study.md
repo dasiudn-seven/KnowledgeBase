@@ -272,11 +272,300 @@ DROP INDEX index_name ON table_name;
 
 ### SQL性能分析
 
+#### SQL执行频率
+
+ `Mysql` 客户端连接成功后，通过 `show [session|global] status` 命令可以提供服务器状态信息。
+
+```sql
+-- 可以查看当前数据库的INSER、UPDATE、DELETE、SELECT访问频次, 7个_
+SHOW GLOBAL STATUS LIEK 'Com_______';
+```
+
+#### 慢查询日志
+
+慢查询日志记录了所有执行时间超过指定参数(`long_query_time`，单位：秒， 默认10秒)的所有SQL语句的日志。
+
+`Mysql`的慢查询日志默认没有开启，需要在`Mysql`的配置文件(`/etc/my.cnf`)中配置。
+
+```sql
+-- 查询慢查询日志的开关是否开启
+SHOW VARIABLES LIKE 'slow_query_log';
+```
+
+```my.cnf
+# 开启Mysql慢查询日志的开关
+slow_query_log = 1
+
+# 设置慢查询日志的时间为2秒，SQL语句执行时间超过2秒，就会视为慢查询，记录慢查询日志
+long_query_time = 2
+```
+
+```sh
+# 重启mysql服务器
+systemctl restart mysqld
+```
+
+查看慢日志文件中记录的信息 `/var/lib/mysql/localhost-show.log`。
+
+#### profile详情
+
+`show profiles` 能够在做SQL优化时帮助我们了解使劲都耗费到哪里去了。
+
+```sql
+-- 通过have_profiling参数，能够看到当前MySQL是否支持profile操作
+SELECT @@have_profiling;
+
+-- 默认profiling是关闭的，可以通过set语句在session/global级别开启profiling
+SELECT @@profiling;
+SET profiling = 1;
+```
+
+执行一系列的业务SQL的操作，然后通过如下指令查询指令的执行耗时
+
+```sql
+-- 查看每一条SQL的耗时基本情况
+SHOW PROFILES;
+
+-- 查看指定query_id的SQL语句各个阶段的耗时情况
+SHOW PROFILE FOR QUERY query_id;
+
+-- 查看指定query_id的SQL语句CPU的使用情况
+SHOW PROFILE CPU FOR QUERY query_id;
+```
+
+#### Explain执行计划
+
+`EXPLAIN`或者`DESC`命令获取`Mysql`如何执行`SELECT`语句的信息，包括在`SELECT`语句执行过程中表如何连接和连接的顺序。
+
+```sql
+-- 直接在 select 语句之前加上关键字 explain/desc
+EXPLAIN SELECT columnList FROM tableName WHERE ...;
+```
+
+![explain查询示例](./asserts/Photo20260429_173705.png)
+
+##### EXPLAIN 执行计划各字段的含义
+
+- **Id**：SELECT查询序列号，表示查询中执行`SELECT`子句或者是操作表的顺序(Id相同，执行顺序从上到下；`Id`不同，值越大，越先执行)。
+- **Select_type**：表示`SELECT`的类型，常见的取值有`SIMLE`(简单表，即不使用表连接或者子查询)、`PRIMARY`（主查询，即外层的查询）、`UNION`（`UNION`中的第二个或者后面的查询语句）、`SUBQUERY`（`SELECT/WHERE`之后包含了子查询）等
+- **Type**：表示连接类型，性能由好到差的连接类型为`NULL`、`system`、`const`、`eq_ref`、`ref`、`range`、`index`、`all`。
+- **Possible_key**：显示可能应用在这张表上的索引，一个或多个。
+- **Key**：实际使用的索引，如果为`NULL`，则表示没有使用索引。
+- **Key_len**：表示索引中使用的字节数，该值为索引字段最大可能长度，并非实际使用长度，在不损失精确性的前提下，长度越短越好。
+- **Rows**：`Mysql`认为必须要执行查询的行数，在`InnoDB`引擎表中，是一个估计值，可能并不总是准确的。
+- **Filitered**：表示返回结果的行数占需读取行数的百分比，`filtered`的值越大越好。
+
 ### 索引使用
+
+#### 最左前缀法则
+
+如果索引使用了多列(联合索引)，要遵循最左前缀法则。最左前缀法则指的是查询从索引的最左列开始，并且不跳过索引中的列。如果跳跃某一列，**索引将部分失效(后面的字段索引失效)**。
+
+#### 范围查询
+
+联合索引中，出现范围查询(>, <)，**范围查询右侧的索引列失效**。
+
+#### 索引列运算
+
+不要在索引类上运算，**否则索引将会失效**。
+
+#### 字符串不加引号
+
+字符串类型字段使用时，不加引号，**索引将会失效**。
+
+#### 模糊查询
+
+如果仅仅是尾部使用模糊查询，索引不会失效，但是头部模糊查询，索引将会失效。
+
+#### Or连接的条件
+
+用`or`分割开的条件，如果`or`前的条件中的列有索引，而后面的列中没有索引，那么涉及的索引都不会被用到。只有两侧都有索引的时候，索引才会生效。
+
+#### 数据分布影响
+
+如果`Mysql`评估使用索引比全表更慢，则不使用索引。
+
+#### SQL提示
+
+SQL提示，是优化数据库的一个重要手段，简单来说，就是在SQL语句中加入一些人为的提示来达到优化的操作目的。
+
+```sql
+-- use index 建议使用哪些索引
+EXPLAIN SELECT * FROM tb_user USE INDEX(idx_user_pro) WHERE profession = '软件工程';
+
+-- ignore index 不使用哪些索引
+EXPLAIN SELECT * FROM tb_user IGNORE INDEX(idx_user_pro) WHERE profession = '软件工程';
+
+-- force index 强制使用哪个索引
+EXPLAIN SELECT * FROM tb_user FORCE INDEX(idx_user_pro) WHERE profession = '软件工程';
+```
+
+#### 覆盖索引
+
+尽量使用覆盖索引(查询使用了索引，并且需要返回的列，在该索引中已经全部能够找到)，减少`SELECT *`。
+
+##### 拓展
+
+- `using index conditions`: 查找使用了索引，但是需要回表查询数据。
+- `using where; using index`: 查找使用了索引，但是需要的数据都在索引列中能找到，所以不需要回表查询。
+
+#### 前缀索引
+
+ 当字段类型为字符串(varchar，text等)时，有时候需要索引很长的字符串，这会让索引变得很大，查询时，浪费大量的磁盘IO，影响查询效率。此时可以只将字符串的一部分前缀，建立索引，这样可以大大节约索引空间，从而提高索引效率。
+
+##### 语法
+
+```sql
+CREATE INDEX idx_xxx_xxx ON tableName(column(n));
+```
+
+##### 前缀长度
+
+可以根据索引的选择性来决定，而选择性是指不重复的索引值(基数)和数据表的记录总数的比值，索引选择性越高则查询效率越高，唯一索引的选择性是1，这是最好的索引选择性，性能也是最好的。
+
+```sql
+SELECT COUNT(DISTINCT SUBSTRING(column, 1, n)) / COUNT(*) FROM tableName;
+```
+
+#### 单列索引与联合索引
+
+- 单个索引：即一个索引只包含单个列。
+- 联合索引：即一个索引包含了多个列。
+
+在业务场景中，如果存在多个查询条件，考虑针对查询字段建立索引时，建议建立联合索引，而非单列索引。
+
+多条件联合查询时，Mysql优化器会评估哪个字段的索引效率更高，会选择该索引完成本次查询。
 
 ### 索引设计原则
 
+1. 针对于数据量较大，且查询比较频繁的表建立索引。
+2. 针对于常作为查询条件(where)、排序(order by)、分组(group by)操作的字段建立索引。
+3. 尽量选择区分度高的列作为索引，尽量建立唯一索引，区分度越高，使用索引的效率越高。
+4. 如果是字符串类型的字段，字段的长度较长，可以针对于字段的特点，建立前缀索引。
+5. 尽量使用联合索引，减少单列索引，查询时，联合索引很多时候可以覆盖索引，节省存储空间，避免回表，提高查询效率。
+6. 要控制索引的数量，索引并不是多多益善，索引越多，维护索引结构的代价也就越大，会影响增删改的效率。
+7. 如果索引列不能存储NULL值，请在创建表时使用NOT NULL约束它。当优化器知道每列是否包含NULL值时，它可以更好地确定哪个索引最有效地用于查询。
+
 ## SQL优化
+
+### 插入数据
+
+#### Insert优化
+
+##### 批量插入
+
+```sql
+INSERT INTO tb_user VALUES(...),(...), ... ,(...);
+```
+
+##### 手动事务提交
+
+```sql
+START TRANSACTION;
+INSERT INTO tb_user VALUES(...),(...), ... ,(...);
+INSERT INTO tb_user VALUES(...),(...), ... ,(...);
+INSERT INTO tb_user VALUES(...),(...), ... ,(...);
+COMMIT;
+```
+
+##### 主键顺序插入
+
+建议主键顺序插入
+
+##### 大批量数据插入
+
+如果一次性需要插入大批量数据，使用`Insert`语句性能较低，此时可以使用`Mysql`数据库提供的`Load`指令进行插入。
+
+```sql
+-- 客户端连接服务端时，加上参数 --local-infile
+mysql --local-infile -u root -p;
+
+-- 设置全局参数local_infile为1,开启从本地加载文件导入数据的开关。
+SET GLOBAL local_infile = 1;
+-- 执行load指令将准备好的数据，加载到表结构中
+LOAD DATA LOCAL INFILE '/root/sql1.log' INTO TABLE 'tb_user' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';
+```
+
+### 主键优化
+
+#### 数据组织方式
+
+在`InnoDB`存储引擎中，表数据都是根据主键顺序组织存放的，这种存储方式的表称为**索引组织表**(index organized table, **IOT**)
+
+#### 页介绍
+
+页可以为空，也可以填充一半，也可以填充100%。每页包含了2～N行数据(如果一行数据过大，会行溢出)，根据主键排序。
+
+#### 页分裂
+
+当一个数据页（通常是 B+ 树的叶子节点页）空间不足，无法容纳新插入的记录时，InnoDB 会将该页拆分成两个页，并将部分记录迁移到新页中，以维持 B+ 树的有序性和平衡性。
+
+#### 页合并
+
+当删除一行记录时，实际上记录并没有被物理删除，只是记录被标记(flaged)为删除并且它的空间变得允许被其他记录声明使用。当页中删除的记录达到 MERGE_THRESHOLD（默认为页的50%），InnoDB会开始寻找最靠近的页(前或后)看看是否可以将两个页合并以优化空间使用。
+
+MERGE_THRESHOLD：合并页的阈值，可以自己设置，在创建表或者创建索引时指定。
+
+#### 主键设计原则
+
+1. 满足业务需求的情况下，尽量降低主键长度。
+2. 插入数据时，尽量选择顺序插入，选择使用AUTO_INCREMENT自增主键。
+3. 尽量不要使用UUID做主键或者是其他自然主键，如身份证号。
+4. 业务操作时，避免对主键的修改。
+
+### Order by优化
+
+- `Using filesort`: 通过表的索引或者全表扫描，读取数据满足条件的数据行，然后在排序缓存区`sort buffer`中完成排序操作，所有不是通过索引直接返回排序结果的排序叫`FileSort`排序。
+- `Using index`:通过有序索引顺序扫描直接返回有序数据，这种情况即为`using index`，不需要额外排序，操作效率高。
+
+#### Order by优化原则
+
+1. 根据排序字段建立合适的索引，多字段排序时，也遵循最左前缀法则。
+2. 尽量使用覆盖索引。
+3. 多字段排序，一个生序一个降序，此时需要注意联合索引在创建时的规则(ASC/DESC)
+4. 如果不可避免出现`filesort`，大数据量排序时，可以适当增大排序缓存区大小`sort_buffer_size`（默认256K）。
+
+### Group by优化
+
+##### Group by优化原则
+
+- 在分组操作时，可以通过索引来提高效率。
+- 分组操作时，索引的使用也是满足最左前缀法则的。
+
+### Limit优化
+
+一个常见有非常头疼的问题就是limit 2000000, 10, 此时需要Mysql排序前2000010记录，仅仅返回2000000 - 2000010的记录，其他记录丢弃，查询排序的代价非常大。
+
+##### Limit优化原则
+
+一般分页查询时，通过创建 覆盖索引 能够比较好地提高性能，可以通过覆盖索引加子查询形式进行优化。
+
+```sql
+SELECT t.* FROM tb_sku t, (SELECT id FROM tb_sku order by id limit 2000000, 10) a WHERE t.id = a.id;
+```
+
+### Count优化
+
+- `MyISAM`引擎把一个表的总行数存在了磁盘上，因此执行`COUNT(*)`的时候会直接返回这个数，效率很高；
+- `InnoDB`引擎就麻烦了，它执行`COUNT(*)`的时候，需要把数据一行一行地从引擎里面读出来，然后累积计数。
+
+##### Count的几种用法
+
+- `COUNT()`是一个聚合函数，对于返回的结果集，一行行地判断，如果`COUNT()`函数的参数不是NULL，累积值就加1，否则不加，最后返回累积值。
+- 用法：`COUNT(*)`、`COUNT(主键)`、`COUNT(字段)`、`COUNT(1)`
+    - `COUNT(主键)`：InnoDB引擎会遍历整张表，把每一行的主键Id值都取出来，返回给服务层。服务层拿到主键后，直接按行进行累加（主键不可能为null）
+    - `COUNT(字段)`
+        - 没有NOT NULL约束：InnoDB引擎会遍历整张表把每一行都字段值都取出来，返回给服务层，服务层判断是否为null，不为null，计数累加。
+        - 有NOT NULL约束：InnoDB引擎会遍历整张表把每一行都字段值都取出来，返回给服务层，直接按行进行累加。
+    - `COUNT(1)`：：InnoDB引擎会遍历整张表，但不取值。服务层对于返回的每一行，放一个数据“1”进去，直接按行进行累加。
+    - `COUNT(*)`：InnoDB引擎并不会把全部字段取出来，而是专门做了优化，不取值，服务层直接按行进行累加。
+- 按照效率排序的话，`COUNT(字段)` < `COUNT(主键)` < `COUNT(1)` 约= `COUNT(*)`
+
+##### 优化思路：自己计数
+
+### Update优化
+
+**InnoDB的行锁是针对索引加的锁，不是针对记录加的锁，并且该索引不能失效，否则会从行锁升级为表锁。**
 
 ## 视图/存储过程/触发器
 
