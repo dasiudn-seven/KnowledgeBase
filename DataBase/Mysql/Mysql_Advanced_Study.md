@@ -569,6 +569,96 @@ SELECT t.* FROM tb_sku t, (SELECT id FROM tb_sku order by id limit 2000000, 10) 
 
 ## 视图/存储过程/触发器
 
+### 视图
+
+视图（View）是一种虚拟存在的表。视图中的数据并不在数据库中实际存在，行和列数据来自定义视图的查询中使用的表，并且在使用视图时动态生成的。通俗的讲，视图只保存了查询的SQL逻辑，不保存查询结果。所以我们在创建视图的时候，主要的工作就落在创建这条SQL查询语句上。
+
+#### 创建
+
+```sql
+CREATE [OR REPLACE] VIEW 视图名称[(列名列表)] AS SELECT 语句 [WITH [CASCADED | LOCAL] CHECK OPTION];
+```
+
+#### 查询
+
+```sql
+-- 查看创建视图的语句
+SHOW CREATE VIEW 视图名称;
+
+-- 查看视图数据:
+SELECT * FROM 视图名称 ...;
+```
+
+#### 修改
+
+```sql
+-- 方式一
+CREATE [OR REPLACE] VIEW 视图名称[(列名列表)]	AS SELECT 语句 WITH [CASCADED | LOCAL] CHECK OPTION];
+
+-- 方式二
+ALTER VIEW 视图名称[(列名列表)] AS SELECT 语句 WITH [CASCADED | LOCAL] CHECK OPTION];
+```
+
+#### 删除
+
+```sql
+	DROP VIEW [IF EXISTS] 视图名称 [, 视图名称];
+```
+
+```sql
+-- 创建视图
+CREATE OR REPLACE VIEW stu_v_1 AS SELECT id, name FROM student WHERE id <= 10;
+
+-- 查询视图
+SHOW CREATE VIEW stu_v_1;
+
+SELECT * FROM stu_v_1;
+
+SELECT * FROM stu_v_1 WHERE id < 3;
+
+-- 修改视图
+CREATE OR REPLACE VIEW stu_v_1 AS SELECT id, name, no FROM student WHERE id <= 10;
+
+ALTER VIEW stu_v_1 AS SELECT id, name, no, course_id FROM student WHERE id <= 10;
+
+-- 删除视图
+DROP VIEW IF EXISTS stu_v_1;
+```
+
+#### 视图的检查选项
+
+当使用`WITH CHECK OPTION `子句创建视图时， `Mysql`会通过视图检查正在更改的每个行，例如插入、更新、删除，以使其符合视图的定义。`Mysql`允许基于另一个视图创建视图，它还会检查依赖视图中的规则以保持一致性。为了确定检查范围，` Mysql`提供了两个选项： `CASCADED`和 `LOCAL`， 默认值为 `CASCADED`。
+
+- `CASCADED`：
+
+    ![Cascaded](./asserts/Photo20260430_110459.png)
+
+- `LOCAL`：
+
+    ![Local](./asserts/Photo20260430_110756.png)
+
+#### 视图的更新
+
+要使视图可更新，视图中的行与基础表中的行之间必须存在一对一的关系。
+
+如果视图包含以下任何一项，则该视图不可更新：
+
+1. 聚合函数或窗口函数(SUM()、MIN()、 MAX()、 COUNT()等)
+2. DISTINCT
+3. GROUP BY
+4. HAVING
+5. UNION 或者 UNION ALL
+
+#### 视图的作用
+
+- 简单：视图不仅可以简化用户对数据的理解，也可以简化他们的操作。那些被经常是哟个点查询可以被定义为视图，从而使得用户不必为以后的操作每次指定全部的条件。
+- 安全：数据库可以授权，但不能授权到数据库的特定行和特定列上。通过视图用户只能查询和修改他们所能见到的数据。
+- 数据独立：视图可帮助用户屏蔽真实表结构变化带来的影响。
+
+### 存储过程
+
+### 触发器
+
 ## 锁
 
 ## InnoDB引擎
