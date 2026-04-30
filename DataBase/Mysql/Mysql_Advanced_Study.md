@@ -674,11 +674,134 @@ CREATE PROCEDURE 存储过程名称([ 参数列表 ])
 BEGIN 
 		sql语句
 END;
+
+-- eg
+CREATE PROCEDURE p1()
+BEGIN
+	SELECT * FROM tb_user;
+END:
+
+-- 命令行模式下
+delimiter && 
+CREATE PROCEDURE p1()
+BEGIN
+	SELECT * FROM tb_user; 
+END&&
 ```
 
-
+**注意:**在命令行中，执行创建存储过程的SQL时，需要通过关键字 `delimiter`指定SQL语句的结束符。
 
 #### 调用
+
+```sql
+CALL 存储过程名称([ 参数列表 ]);
+
+-- eg
+SHOW p1();
+```
+
+#### 查看
+
+```sql
+-- 查询指定数据库的存储过程及状态信息
+SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_SCHEMA = 'xxx';
+
+-- eg
+SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_SCHEMA = 'tb_user';
+
+-- 查询某个存储过程的定义
+SHOW CREATE PROCEDURE 存储过程名称;
+
+-- eg
+SHOW CREATE PROCEDURE p1;
+```
+
+#### 删除
+
+```sql
+DROP PROCEDURE [IF EXISTS] 存储过程名称;
+
+-- eg
+DROP PROCEDURE IF EXISTS p1;
+```
+
+#### 变量
+
+##### **系统变量** 
+
+**系统变量** 是`Mysql`服务器提供，不是用户定义的，属于服务器层面。分为全局变量(`GLOBAL`)、会话变量(`SESSION`)
+
+###### 查看系统变量
+
+```sql
+-- 查看所有系统变量
+SHOW [SESSION | GLOBAL] VARIABLES;
+
+-- 可以通过LIKE模糊匹配方式查找变量
+SHOW [SESSION | GLOBAL] VARIABLES LIKE '...';
+
+-- 查看指定变量的值
+SELECT @@[SESSION | GLOBAL].系统变量名;
+```
+
+###### 设置系统变量
+
+```sql
+SET [SESSION | GLOBAL] 系统变量名 = 值;
+SET @@[SESSION | GLOBAL] 系统变量名 = 值;
+```
+
+###### 注意
+
+- 如果没有指定`SESSION `/ `GLOBAL`，默认是`SESSION`会话变量。
+- `Mysql`服务重新启动后，所设置的全局参数会失效，要想不失效，需要在`/etc/my.cnf`中配置
+
+##### 用户自定义变量
+
+**用户自定义变量**是用户根据需要自己定义的变量，用户变量不用提前声明，在用的时候直接用"@变量名"使用就可以。其作用域为当前连接。
+
+###### 赋值
+
+```sql
+-- 方式一
+SET @var_name = expr [, @var_name = expr]...;
+-- 方式二
+SET @var_name := expr [, @var_name := expr]...;
+-- 方式三
+SELECT @var_name := expr [, @var_name := expr]...;
+-- 方式四
+SELECT 字段名 INTO @var_name FROM 表名;
+```
+
+###### 使用
+
+```sql
+SELECT @var_name;
+```
+
+###### 注意
+
+用户自定义的变量无需对其进行声明或初始化，只不过获取到的值为NULL。
+
+##### 局部变量
+
+**局部变量**是根据需要定义的在局部生效的变量，访问之前，需要`DECLARE`声明。可用作存储过程内的局部变量和输入参数，局部变量的范围是在其内声明的`BEGIN ... END`块。
+
+###### 声明
+
+```sql
+DECLARE 变量名 变量类型[DEFAULT ...];
+```
+
+变量类型就是数据库字段类型：`int`，`bigint`，`char`，`varchar`，`date`，`time`等。
+
+###### 赋值
+
+```sql
+SET 变量名 = 值;
+SET 变量名 := 值;
+SELECT 字段名 INTO 变量名 FROM 表名 ...;
+```
 
 ### 触发器
 
