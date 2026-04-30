@@ -337,7 +337,7 @@ SELECT 字段列表 FROM 表名 LIMIT 起始索引 查询
 
 ##### DQL 执行顺序
 
-![Photo20260422_155734](./asserts/Photo20260422_155734.png)
+![Photo20260422_155734](./assets/Photo20260422_155734.png)
 
 #### DCL语句
 
@@ -378,7 +378,7 @@ DROP USER '用户名'@'主机名';
 
 **MySQL的常见权限，如下所示：**
 
-![Photo20260422_162557](./asserts/Photo20260422_162557.png)
+![Photo20260422_162557](./assets/Photo20260422_162557.png)
 
 ###### 查询权限
 

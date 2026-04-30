@@ -65,7 +65,7 @@ SHOW VARIABLES LIKE 'innodb_file_per_table';
 
 ##### 逻辑存储结构
 
-![InnoDB逻辑存储结构](./asserts/Photo20260428_202730.png)
+![InnoDB逻辑存储结构](./assets/Photo20260428_202730.png)
 
 #### MyISAM
 
@@ -159,7 +159,7 @@ SHOW VARIABLES LIKE 'innodb_file_per_table';
 
     -  以一颗最大度数(max-degree)为5(5阶)的B-Tree为例(每个节点最多存储4个key，5个指针)
 
-        ![B-Tree的数据结构](./asserts/Photo20260428_222435.png)
+        ![B-Tree的数据结构](./assets/Photo20260428_222435.png)
 
     - 树的度数指的是一个节点的子节点个数。
 
@@ -167,7 +167,7 @@ SHOW VARIABLES LIKE 'innodb_file_per_table';
 
     - 以一颗最大度数(max-degree)为4(4阶)的B-Tree为例
 
-        ![B+Tree的数据结构](./asserts/Photo20260428_222628.png)
+        ![B+Tree的数据结构](./assets/Photo20260428_222628.png)
 
     - Mysql索引数据结构对经典的B+Tree进行了优化。在原B+Tree的基础上，增加了指向相邻叶子节点的链表指针，就形成了带有顺序指针的B+Tree,提高区间访问的性能。
 
@@ -180,7 +180,7 @@ SHOW VARIABLES LIKE 'innodb_file_per_table';
 
     - 哈希索引就是采用一定的hash算法，将键值换算成新的hash值，映射到对应的槽位上，然后存存储在hash表中。
 
-        ![hash数据结构](./asserts/Photo20260428_223520.png)
+        ![hash数据结构](./assets/Photo20260428_223520.png)
 
     - 如果两个(或多个)键值，映射到一个相同的槽位上，他们就产生了hash冲突(也称为hash碰撞)，可以通过链表来解决。
 
@@ -224,7 +224,7 @@ SHOW VARIABLES LIKE 'innodb_file_per_table';
 
 #### 聚集索引与二级索引的数据存储
 
-![聚集索引与二级索引的数据存储](./asserts/Photo20260429_102532.png)
+![聚集索引与二级索引的数据存储](./assets/Photo20260429_102532.png)
 
 - 聚集索引：叶子节点存储的数据是这个表一行的数据。
 - 二级索引：叶子节点存储的数据是一个表的主键数据。
@@ -342,7 +342,7 @@ SHOW PROFILE CPU FOR QUERY query_id;
 EXPLAIN SELECT columnList FROM tableName WHERE ...;
 ```
 
-![explain查询示例](./asserts/Photo20260429_173705.png)
+![explain查询示例](./assets/Photo20260429_173705.png)
 
 ##### EXPLAIN 执行计划各字段的含义
 
@@ -631,11 +631,11 @@ DROP VIEW IF EXISTS stu_v_1;
 
 - `CASCADED`：
 
-    ![Cascaded](./asserts/Photo20260430_110459.png)
+    ![Cascaded](./assets/Photo20260430_110459.png)
 
 - `LOCAL`：
 
-    ![Local](./asserts/Photo20260430_110756.png)
+    ![Local](./assets/Photo20260430_110756.png)
 
 #### 视图的更新
 
@@ -656,6 +656,29 @@ DROP VIEW IF EXISTS stu_v_1;
 - 数据独立：视图可帮助用户屏蔽真实表结构变化带来的影响。
 
 ### 存储过程
+
+ 存储过程是事先经过编译并存储在数据库中的一段SQL语句的集合，调用存储过程可以简化应用开发人员的很多工作，减少数据在数据库和应用服务器之间的传输，对于提高数据处理的效率时有好处的。
+
+存储过程思想上很简单，就是数据库SQL语言层面的代码封装与重用。
+
+#### 特点
+
+- 封装，复用
+- 可以接收参数，也可以返回数据
+- 减少网络交换，效率提升
+
+#### 创建
+
+```sql
+CREATE PROCEDURE 存储过程名称([ 参数列表 ])
+BEGIN 
+		sql语句
+END;
+```
+
+
+
+#### 调用
 
 ### 触发器
 
