@@ -803,9 +803,401 @@ SET 变量名 := 值;
 SELECT 字段名 INTO 变量名 FROM 表名 ...;
 ```
 
+##### If条件判断
+
+```sql
+IF 条件 THEN
+	...;
+ELSEIF 条件2 THEN			-- 可选
+	...;
+ELSE 								  -- 可选
+	...;
+END IF;
+
+# 根据定义的分数score变量，判定当前分数对饮刚到分数等级
+# score >= 85, 优秀， 60 <= score < 85, 及格, score < 60，不及格。
+CREATE PROCEDURE p()
+BEGIN
+	DECLARE socre int default 58;
+	DECLARE result varchar(10);
+
+	IF score >= 85 THEN
+		set result := '优秀';
+  ELSEIF score >= 60 THEN
+  	set result := '及格';
+  ELSE
+  	set result := '不及格';
+  END IF;
+  SELECT result;
+END;
+```
+
+##### 参数
+
+| 类型  |                     含义                     | 备注 |
+| :---: | :------------------------------------------: | :--: |
+|  IN   |   该类参数作为输入，也就是需要调用时传入值   | 默认 |
+|  OUT  | 该类参数作为输出，也就是该参数可以作为返回值 |      |
+| INOUT |    即可以作为输入参数，也可以作为输出参数    |      |
+
+``` sql
+CREATE PROCEDURE 存储过程名称([IN/OUT/INOUT] 参数名， 参数类型)
+BEGIN
+		-- SQL语句
+END;
+
+# 根据传入的分数score变量，判定当前分数对饮刚到分数等级，并返回
+# score >= 85, 优秀， 60 <= score < 85, 及格, score < 60，不及格。
+CREATE PROCEDURE p(IN score int, OUT result varchar(10))
+BEGIN
+	IF score >= 85 THEN
+		set result := '优秀';
+  ELSEIF score >= 60 THEN
+  	set result := '及格';
+  ELSE
+  	set result := '不及格';
+  END IF;
+END;
+```
+
+##### CASE
+
+```sql
+-- 语法 1
+CASE case_value
+	WHEN when_value1 THEN statement_list1
+	[WHEN when_value2 THEN statement_list2]...
+	[ELSE statement_list];
+END CASE;
+
+-- 语法 2
+CASE
+	WHEN search_condition1 THEN statement_list1
+	[WHEN search_condition2 THEN statement_list2]...
+	[ELSE statement_list;
+END CASE;
+
+# 根据传入的月份，判断月份所属的季节(要求采用 case 结构)
+# 1-3 第一季度，4-6 第二季度，7-9 第三季度，10-12 第四季度
+CREATE PROCEDURE p(IN month int, OUT result varchar(10))
+BEGIN
+	CASE
+		WHEN month >= 1 and month <= 3 THEN set result := "第一季度"
+		WHEN month >= 4 and month <= 6 THEN set result := "第二季度"
+		WHEN month >= 7 and month <= 9 THEN set result := "第三季度"
+		WHEN month >= 10 and month <= 12 THEN set result := "第四季度"
+		ELSE set result := "参数非法";
+END;
+```
+
+##### WHILE
+
+WHILE循环是有条件的循环控制语句。满足条件后，再执行循环体中的SQL语句。
+
+```sql
+-- 先判定条件， 如果条件为 true，则执行逻辑，否则，不执行逻辑
+WHILE 条件 DO
+	SQL 逻辑...
+END WHILE;
+
+# 计算从 1 累加到 n 的值，n 为传入的参数值
+CREATE PROCEDURE p(IN n int, OUT result int)
+BEGIN
+	DECLARE i int default 1;
+	set result := 0;
+	WHILE i < n DO
+		set result := result + i;
+		set i := i + 1;
+  END WHILE;
+END;
+```
+
+##### Repeat
+
+Repeat是有条件的循环控制语句，当满足条件的时候退出循环。
+
+```sql
+-- 先执行一次逻辑，然后判定逻辑是否满足，如果满足，则退出。如果不满足，则继续下一次循环
+REPEAT
+	SQL 逻辑...
+	UNTIL 条件
+END REPEAT;
+
+# 计算从 1 累加到 n 的值，n 为传入的参数值
+CREATE PROCEDURE p(IN n int, OUT result int)
+BEGIN
+	set result := 0;
+	REPEAT
+		set result := result + n;
+		set n := n - 1;
+    UNTIL n <= 0 ;
+  END REPEAT;
+END;
+```
+
+##### Loop 
+
+Loop实现简单的循环，如果不在SQL逻辑中增加退出循环的条件，可以用其来实现简单的死循环。Loop可以配合两个语句使用
+
+- LEAVE：配合循环使用，退出循环。（与 Java 中 break 类似）
+- ITERATE：必须用在循环中，作用是跳过当前循环剩下的语句，直接进入下一次循环。（与 Java 中 continue 类似）
+
+```sql
+[begin_label:] LOOP
+	SQL 逻辑...
+END LOOP [end_label];
+
+LEAVE label; -- 退出指定标记的循环体
+ITERATE label; -- 直接进入下一次循环
+
+#  计算从 1 累加到 n 的值，n 为传入的参数值
+CREATE PROCEDURE p(IN n int, OUT result int)
+BEGIN
+	set result := 0;
+	sum LOOP
+		set result := result + n;
+		set n := n - 1;
+		IF n = 0 THEN
+			LEAVE sum;
+    END IF;
+  END LOOP sum;
+END;
+
+#  计算从 1 到 n 中的偶数累加的值，n 为传入的参数值
+CREATE PROCEDURE p(IN n int, OUT result int)
+BEGIN
+	set result := 0;
+	sum LOOP
+		if n % 2 = 0 THEN
+			set result := result + n;
+    ELSE 
+    	ITERATE sum; 
+ 		END IF;
+		set n := n - 1;
+		IF n = 0 THEN
+			LEAVE sum;
+    END IF;
+  END LOOP sum;
+END;
+```
+
+##### 游标
+
+**游标**(`cursor`)是用来存储查询结果集的数据类型，在存储过程和函数中可以使用游标对结果集进行循环处理。游标的使用包括游标的声明(DECLARE)，打开游标(OPEN)，获取游标记录(FETCH) 和关闭游标 (CLOSE)。
+
+###### 声明游标
+
+```sql
+DECLARE 游标名称 CURSOR FOR 查询语句;
+```
+
+###### 打开游标
+
+```sql
+OPEN 游标名称;
+```
+
+###### 获取游标记录
+
+```sql
+FETCH 游标名称 INTO 变量[, 变量]...;
+```
+
+###### 关闭游标
+
+```sql
+CLOSE 游标名称;
+```
+
+
+
+```sql
+# 根据传入的参数 uage，来查询用户 tb_user 中，所有的用户年龄小于等于 uage 的用户姓名（name）和专业（profession），并将用户的姓名和专业插入到所创建的一张新表(id，name，prefession)中。
+CREATE PROCEDURE p(IN uage int)
+BEGIN
+	DECLARE uname varchar(20);
+	DECLARE upro varchar(20);
+	DECLARE user_cursor CURSOR FOR SELECT name, profession FROM tb_user WHERE age <= uage;
+	
+	DROP TABLE IF EXISTS tb_user_pro;
+	CREATE TABLE IF EXISTS tb_user_pro(
+  	id int primary key auto_increment,
+    name varchar(20) not null,
+    perfession varchar(40)
+  );
+	
+	OPEN user_cursor;
+	
+	# 无退出条件，会报错
+	WHILE true DO
+		FETCH user_cursor into uname, upro;
+		INSERT INTO tb_user_pro VALUE (null, uname, upro);
+	END WHILE;
+	
+	CLOSE user_cursor;
+END;
+```
+
+##### 条件处理程序
+
+条件处理程序(Handler)可以用来定义在流程控制结构执行过程中遇到问题时相对应的处理步骤。
+
+```sql
+DECLARE handler_action HANDLER FOR condition_value[,condition_value] ... statement;
+
+handler_action
+		COUTINUE: 继续执行当前程序
+		EXIT: 终止执行当前程序
+condition_value
+		SQLSTATE sq1statee_value: 状态码，如 02000
+		SQLWARNING: 所有以 01 开头的 SQLSTATE 代码的简写
+		NOT FOUND: 所有以 02 开头的 SQLSTATE 代码的简写
+		SQLEXCEPTION: 所有没有 SQLWARNING 或 NOT FOUND 捕获的 SQLSTATE 代码的简写
+		
+# 根据传入的参数 uage，来查询用户 tb_user 中，所有的用户年龄小于等于 uage 的用户姓名（name）和专业（profession），并将用户的姓名和专业插入到所创建的一张新表(id，name，prefession)中。
+CREATE PROCEDURE p(IN uage int)
+BEGIN
+	DECLARE uname varchar(20);
+	DECLARE upro varchar(20);
+	DECLARE user_cursor CURSOR FOR SELECT name, profession FROM tb_user WHERE age <= uage;
+	DECLARE EXIT HANDLER FOR SQLSTATE '02000' CLOSE user_cursor;
+	
+	DROP TABLE IF EXISTS tb_user_pro;
+	CREATE TABLE IF EXISTS tb_user_pro(
+  	id int primary key auto_increment,
+    name varchar(20) not null,
+    perfession varchar(40)
+  );
+	
+	OPEN user_cursor;
+	
+	# 无退出条件，会报错
+	WHILE true DO
+		FETCH user_cursor into uname, upro;
+		INSERT INTO tb_user_pro VALUE (null, uname, upro);
+	END WHILE;
+	
+	CLOSE user_cursor;
+END;
+```
+
 ### 触发器
 
+#### 介绍
+
+ 触发器是与表有关的数据库对象，指在Insert/Update/Delete之前或之后，触发并执行触发器中定义的SQL语句结合。触发器的这种特性可以协助应用在数据库端确保数据的完整性，日志记录，数据校验等操作。
+
+使用别名 OLD 和 NEW 来引用触发器中发生变化的记录内容，这与其它数据库是相似的，现在触发器还只支持行级触发，不支持语句级触发。
+
+|   触发器类型   |                       NEW 和 OLD                       |
+| :------------: | :----------------------------------------------------: |
+| INSERT型触发器 |             NEW 表示将要或者已经新增的数据             |
+| UPDATE型触发器 | OLD表示修改之前的数据，NEW表示将要或者已经修改后的数据 |
+| DELETE型触发器 |             OLD表示将要或者已经删除的数据              |
+
+#### 创建
+
+```sql
+CREATE TRIGGER trigger_name
+BEFORE/AFTER INSERT/UPDATE/DELETE
+ON tbl_name FOR EACH ROW -- 行级触发器
+BEGIN
+		trigger_stmt;
+END:
+```
+
+#### 查看
+
+```sql
+SHOW TRIGGERS;
+```
+
+#### 删除
+
+```sql
+DROP TRIGGER [schema_name.]trigger_name; -- 如果没有指定 schema_name, 默认当前数据库。
+```
+
+```sql
+# 案例：通过触发器记录 tb_user 表的数据变更日志，将变更日志插入到日志表 user_logs 中，包含增加，修改，删除
+CREATE TRIGGER tb_user_insert_trigger
+AFTER INSERT
+ON tb_user FOR EACH ROW -- 行级触发器
+BEGIN
+		INSERT INTO 
+			user_logs (id, operation, operate_time, operate_id, opearte_params)
+		values (null, 'insert', now(), NEW.id, CONCAT('插入的数据为：id = ', NEW.id, ',name = ', NEW.name, ',phone = ', NEW.phone, ',email = ', NEW.email, ',profession = ', NEW.profession));
+END:
+
+CREATE TRIGGER tb_user_update_trigger
+AFTER UPDATE
+ON tb_user FOR EACH ROW -- 行级触发器
+BEGIN
+		INSERT INTO 
+			user_logs (id, operation, operate_time, operate_id, opearte_params)
+		values (null, 'update', now(), NEW.id, CONCAT('更新前的数据为：id = ', OLD.id, ',name = ', OLD.name, ',phone = ', OLD.phone, ',email = ', OLD.email, ',profession = ', OLD.profession, ' ｜ 更新后的数据为：id = ', NEW.id, ',name = ', NEW.name, ',phone = ', NEW.phone, ',email = ', NEW.email, ',profession = ', NEW.profession));
+END:
+
+CREATE TRIGGER tb_user_delete_trigger
+AFTER DELETE
+ON tb_user FOR EACH ROW -- 行级触发器
+BEGIN
+		INSERT INTO 
+			user_logs (id, operation, operate_time, operate_id, opearte_params)
+		values (null, 'delete', now(), NEW.id, CONCAT('删除的数据为：id = ', OLD.id, ',name = ', OLD.name, ',phone = ', OLD.phone, ',email = ', OLD.email, ',profession = ', OLD.profession));
+END:
+```
+
 ## 锁
+
+### 概述
+
+锁是计算机协调多个进程或者线程并发访问某一资源的机制。在数据库中，除传统的计算资源(CPU,RAM, I/O)的争用以外，数据也是一种供许多用户共享的资源。如何保证数据并发访问的一致性、有效性是所有数据库必须解决的一个问题，锁冲突也是影响数据库并发访问性能的一个重要因素。从这个角度来说，锁对数据库而言显得尤其重要，也更加复杂。
+
+### 全局锁
+
+锁定数据库中的所有表。
+
+全局锁就是对整个数据库实例加锁，加锁后整个实力就处于只读状态，后续的 DML 的写语句，DDL 语句，已经更新操作的失误提交语句都将被阻塞。
+
+典型案列：做全库的逻辑备份，对所有的表进行锁定，从而获取一致性视图，保证数据的完整性。
+
+```sql
+-- 加上全局锁
+FLUST TABLES WITH READ LOCK;
+
+-- 备份数据 shell 语句
+MYSQLDUMP -uroot -p'password' database_name > databese_name.sql;
+
+-- 释放锁
+UNLOCK TABLES;
+```
+
+#### 特点
+
+数据库中加全局锁，是一个比较重的操作，存在以下问题:
+
+1. 如果在主库上备份，那么在备份期间都不能执行更新，业务基本上就得停摆。
+2. 如果在从库上备份，那么在备份期间从库不能执行主库同步过来的二进制日志(binlog)，会导致主从延迟。
+
+在 InnoDB 引擎中，我们可以在备份的时加上参数 --single-transaction 参数来完成不加锁的一次性数据备份。
+
+```sh
+# 通过快照来同步数据，不需要加全局锁
+mysqldump --single-transaction -uroot -p'password' database_name > databese_name.sql;
+```
+
+### 表级锁
+
+每次操作锁住整张表。
+
+表级锁，每次操作锁住整张表。锁定粒度大，发生锁冲突的概率最大，并发度最低。
+
+
+
+### 行级锁
+
+每次操作锁住对应的行数据。
 
 ## InnoDB引擎
 
