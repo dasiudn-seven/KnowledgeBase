@@ -43,6 +43,7 @@
 //
 //
 //
+//
 // (0, 0)
 // 0
 // 0
@@ -100,51 +101,47 @@
 //leetcode submit region begin(Prohibit modification and deletion)
 class Solution {
     public int maxPathScore(int[][] grid, int k) {
-        int m = grid.length - 1;
-        int n = grid[0].length - 1;
-        int[][][] dp = new int[m][n][k + 1];
-
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                Arrays.fill(dp[i][j], Integer.MIN_VALUE);
-            }
+        int m = grid.length, n = grid[0].length;
+        int[][] prev = new int[n][k + 1];
+        for (int j = 0; j < n; j++) {
+            Arrays.fill(prev[j], Integer.MIN_VALUE);
         }
-
-        dp[0][0][0] = 0;
+        prev[0][0] = 0;
 
         for (int i = 0; i < m; i++) {
+            int[][] cur = new int[n][k + 1];
             for (int j = 0; j < n; j++) {
-                for (int c = 0; c <= k; c++) {
-                    if (dp[i][j][c] == Integer.MIN_VALUE) continue;
+                Arrays.fill(cur[j], Integer.MIN_VALUE);
+            }
 
-                    if (i + 1 < m) {
-                        int val = grid[i + 1][j];
-                        int cost = (val == 0 ? 0 : 1);
-                        if (c + cost <= k) {
-                            dp[i + 1][j][c + cost] = Math.max(
-                                    dp[i + 1][j][c + cost],
-                                    dp[i][j][c] + val
-                            );
-                        }
+            for (int j = 0; j < n; j++) {
+                int val = grid[i][j];
+                int cost = (val == 0 ? 0 : 1);
+
+                if (i == 0 && j == 0) {
+                    cur[0][0] = 0;
+                    continue;
+                }
+
+                for (int c = cost; c <= k; c++) {
+                    int best = Integer.MIN_VALUE;
+                    if (prev[j][c - cost] != Integer.MIN_VALUE) {
+                        best = Math.max(best, prev[j][c - cost]);
                     }
-
-                    if (j + 1 < n) {
-                        int val = grid[i][j + 1];
-                        int cost = (val == 0 ? 0 : 1);
-                        if (c + cost <= k) {
-                            dp[i][j + 1][c + cost] = Math.max(
-                                    dp[i][j + 1][c + cost],
-                                    dp[i][j][c] + val
-                            );
-                        }
+                    if (j > 0 && cur[j - 1][c - cost] != Integer.MIN_VALUE) {
+                        best = Math.max(best, cur[j - 1][c - cost]);
+                    }
+                    if (best != Integer.MIN_VALUE) {
+                        cur[j][c] = best + val;
                     }
                 }
             }
+            prev = cur;
         }
 
         int ans = -1;
-        for (int i = 0; i <= k; i++) {
-            ans = Math.max(ans, dp[m - 1][n - 1][i]);
+        for (int c = 0; c <= k; c++) {
+            ans = Math.max(ans, prev[n - 1][c]);
         }
         return ans;
     }
